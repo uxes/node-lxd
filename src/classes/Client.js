@@ -75,79 +75,84 @@ var Client = utils.class_('Client', {
   /**
    * Get all images
    * @param {boolean?} lazy
-   * @param {function} callback
-   * @returns {Image[]}
+   * @returns {Promise}
    */
-  images: function(lazy, callback) {
-    // arguments
-    if (arguments.length == 1) {
-      callback = arguments[0];
-      lazy = false;
-    }
+  images: async function(lazy = false) {
 
-    // request
-    var client = this;
+    return new Promise( (resolve, reject) => {
 
-    this._request('GET /images', {}, function (err, body) {
-      if (err) {
-        callback(err);
-      } else {
-        // get queue
-        var getQueue = new TaskQueue();
-        var images = [];
+      // request
+      let client = this;
 
-        for (var i = 0; i < body.length; i++) {
-          // get image fingerprint
-          var fingerprint = body[i].split('/');
-          fingerprint = fingerprint[fingerprint.length - 1];
+      this._request('GET /images', {}, function (err, body) {
+        if (err) {
+          reject(err)
+        } else {
+          // get queue
+          let getQueue = new TaskQueue();
+          let  images = [];
 
-          // queue get operation or push fingerprint if lazy
-          if (lazy === true) {
-            images.push(fingerprint);
-          } else {
-            (function (fingerprint) {
-              getQueue.queue(function (done) {
-                client.image(fingerprint,
-                  function (err, image) {
-                    // push image, if we error we (assume) that the image
-                    // was deleted while downloading, so we don't break everything
-                    // by returning an error.
-                    if (!err)
-                    images.push(image);
+          for (let i = 0; i < body.length; i++) {
+            // get image fingerprint
+            let fingerprint = body[i].split('/');
+            fingerprint = fingerprint[fingerprint.length - 1];
 
-                    // done
-                    done();
-                  });
-              });
-            })(fingerprint);
+            // queue get operation or push fingerprint if lazy
+            if (lazy === true) {
+              images.push(fingerprint);
+            } else {
+              (function (fingerprint) {
+                getQueue.queue(function (done) {
+                  client.image(fingerprint,
+                    function (err, image) {
+                      console.log("img?", image)
+                      // push image, if we error we (assume) that the image
+                      // was deleted while downloading, so we don't break everything
+                      // by returning an error.
+                      if (!err)
+                        images.push(image.metadata());
+
+                      // done
+                      done();
+                    });
+                });
+              })(fingerprint);
+            }
           }
+
+          // execute queue
+          getQueue.executeAll(function () {
+            resolve(images)
+          });
         }
 
-        // execute queue
-        getQueue.executeAll(function () {
-          callback(null, images);
-        });
-      }
+      });
 
-    });
+    } )
+
   },
 
 
   /**
    * Gets an image with the specified name.
    * @param {string} name
-   * @param {function} callback
    */
-  image: function (fingerprint, callback) {
-    var client = this;
+  image: function (name) {
 
-    this._request('GET /images/' + fingerprint, {}, function (err, body) {
-      if (err) {
-        callback(err);
-      } else {
-        callback(null, new Image(client, body));
-      }
-    });
+    return new Promise( (resolve, reject) => {
+
+      let client = this;
+
+      this._request('GET /images/' + name, {}, function (err, body) {
+        if (err) {
+          reject(err)
+        } else {
+          resolve((new Image(client, body)).metadata());
+        }
+      });
+
+    } )
+
   },
 
   /**

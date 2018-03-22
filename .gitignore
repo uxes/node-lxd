@@ -37,3 +37,5 @@ node_modules
 
 # Test files (binary)
 test/*.zip
+
+package-lock.json

@@ -124,28 +124,33 @@ var Image = utils.class_('Image', {
 
 
   /**
-   * Delete the image.
-   * @param {function} callback
+   * @param {Promise}
    */
-  delete: function(callback) {
-    var deleteQueue = new TaskQueue();
+  delete: function() {
 
-    var error = null;
-    var image = this;
+    return new Promise( (resolve, reject) => {
 
-    // delete the image
-    deleteQueue.queue(function(done) {
-      image._client._request('DELETE /images/' + image.fingerprint(), {},
-        function(err, metadata) {
-          if (err !== null) error = err;
-          done();
-        });
-    });
 
-    // execute
-    deleteQueue.executeAll(function() {
-      callback(error);
-    });
+      let deleteQueue = new TaskQueue();
+
+      let image = this;
+
+      // delete the image
+      deleteQueue.queue((done) => {
+        image._client._request('DELETE /images/' + image.fingerprint(), {},
+          function(err, metadata) {
+            if (err !== null) reject(err);
+            done();
+          });
+      });
+
+      // execute
+      deleteQueue.executeAll(function() {
+        resolve()
+      });
+
+    } )
+
   },
 
   /**
