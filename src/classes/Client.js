@@ -74,10 +74,10 @@ var Client = utils.class_('Client', {
 
   /**
    * Get all images
-   * @param {boolean?} lazy
+   * @param {boolean?} withMetadata
    * @returns {Promise}
    */
-  images: async function(lazy = false) {
+  images: async function(withMetadata = false) {
 
     return new Promise( (resolve, reject) => {
 
@@ -97,27 +97,13 @@ var Client = utils.class_('Client', {
             let fingerprint = body[i].split('/');
             fingerprint = fingerprint[fingerprint.length - 1];
 
-            // queue get operation or push fingerprint if lazy
-            if (lazy === true) {
-              images.push(fingerprint);
-            } else {
               (function (fingerprint) {
-                getQueue.queue(function (done) {
-                  client.image(fingerprint,
-                    function (err, image) {
-                      console.log("img?", image)
-                      // push image, if we error we (assume) that the image
-                      // was deleted while downloading, so we don't break everything
-                      // by returning an error.
-                      if (!err)
-                        images.push(image.metadata());
-
-                      // done
-                      done();
-                    });
+                getQueue.queue(async function (done) {
+                  images.push(withMetadata ? await client.image(fingerprint) : (await client.image(fingerprint)).metadata())
+                  done()
                 });
               })(fingerprint);
-            }
+
           }
 
           // execute queue
