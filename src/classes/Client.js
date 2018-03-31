@@ -147,7 +147,7 @@ var Client = utils.class_('Client', {
         if (err) {
           reject(err)
         } else {
-          resolve((new Image(client, body)).metadata());
+          resolve(new Image(client, body));
         }
       });
 

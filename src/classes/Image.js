@@ -127,7 +127,6 @@ var Image = utils.class_('Image', {
    * @param {Promise}
    */
   delete: function() {
-
     return new Promise( (resolve, reject) => {
 
 
@@ -136,7 +135,7 @@ var Image = utils.class_('Image', {
       let image = this;
 
       // delete the image
-      deleteQueue.queue((done) => {
+      deleteQueue.queue(function (done) {
         image._client._request('DELETE /images/' + image.fingerprint(), {},
           function(err, metadata) {
             if (err !== null) reject(err);
